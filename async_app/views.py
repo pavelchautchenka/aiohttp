@@ -17,6 +17,17 @@ class HomeView(web.View):
         return {"title": "Hello World", "user": username, "posts": all_posts}
 
 
+class NoteDeleteView(web.View):
+    @template("notes/redact.html")
+    async def post(self):
+        post_id = int(self.request.match_info.get('post_id', -1))
+        deleted_post = await Post.delete(post_id=post_id)
+        if deleted_post:
+            raise web.HTTPFound(f'/')
+        else:
+            return {"post": deleted_post, "error": "не удалось удалить заметку"}
+
+
 class NoteRedactView(web.View):
     @template("notes/redact.html")
     async def get(self):
@@ -30,25 +41,20 @@ class NoteRedactView(web.View):
         post_data = await self.request.post()
         action = post_data.get('action')
         post = None
-        if action == "redact":
-            if post_id != -1:
-                title = post_data.get('title', '')
-                content = post_data.get('content', '')
-                user_id = int(post_data.get('user_id', -1))
-                updated_post = await Post.update(post_id=post_id, title=title, content=content, user_id=user_id)
-                if updated_post:
-                    raise web.HTTPFound(f"/")
-                else:
-                    post = await Post.get_by_id(post_id)
+
+        if post_id != -1:
+            title = post_data.get('title', '')
+            content = post_data.get('content', '')
+            user_id = int(post_data.get('user_id', -1))
+            updated_post = await Post.update(post_id=post_id, title=title, content=content, user_id=user_id)
+            if updated_post:
+                raise web.HTTPFound(f"/")
+            else:
+                post = await Post.get_by_id(post_id)
             if not post:
                 post = await Post.get_by_id(post_id)
             return {"post": post, "error": "Не удалось обновить заметку."}
-        elif action == "delete":
-            deleted_post = await Post.delete(post_id=post_id)
-            if deleted_post:
-                raise web.HTTPFound(f'/')
-            else:
-                return {"post": deleted_post, "error": "не удалось удалить заметку"}
+
 
 
 class NoteCreateView(web.View):

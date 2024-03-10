@@ -47,10 +47,7 @@ class User(Base, Manager):
     async def get_existing_user(cls, username):
         async with db_conn.session as session:
             res = await session.execute(select(cls).where(cls.username == username))
-            if res.scalar_one_or_none() is not None:
-                return True
-            else:
-                return False
+            return res.scalar_one_or_none() is not None
 
 
 class Post(Base, Manager):
